@@ -1,0 +1,16 @@
+name: fpm-probe-test
+services:
+  php-fpm:
+    image: php:8.2.1-fpm-alpine3.17
+    ports:
+      - 127.0.0.1:9000:9000
+    volumes:
+      - ./php/html:/var/www/html
+      - ./php/healthz.conf:/usr/local/etc/php-fpm.d/zz-status.conf
+
+  nginx:
+    image: nginxinc/nginx-unprivileged:1.22-alpine
+    ports:
+      - 127.0.0.1:8080:8080
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
