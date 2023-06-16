@@ -2,9 +2,10 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -24,6 +25,7 @@ type RequestOptions struct {
 	statusMax int
 	silent    bool
 	headers   []string
+	debug     bool
 }
 
 func main() {
@@ -55,10 +57,11 @@ func run() error {
 	pflag.BoolVarP(&opts.silent, "silent", "s", opts.silent, "don't show any output, unless failed")
 	pflag.IntVar(&opts.statusMin, "status-min", opts.statusMin, "fail if status is below")
 	pflag.IntVar(&opts.statusMax, "status-max", opts.statusMax, "fail if status is above")
+	pflag.BoolVar(&opts.debug, "debug", opts.debug, "dump the fcgi params")
 	pflag.Parse()
 
 	if len(pflag.Args()) != 1 {
-		log.Fatal("need exactly 1 argument")
+		return errors.New("need exactly 1 argument")
 	}
 
 	res, err := fpmRequest(pflag.Arg(0), opts)
@@ -109,7 +112,7 @@ func fpmRequest(rawUrl string, opts RequestOptions) (*http.Response, error) {
 
 	req := gofast.NewRequest(httpReq)
 
-	pipe, err := fpmHandler(opts.docroot, opts.index)(client, req)
+	pipe, err := fpmHandler(opts.docroot, opts.index, opts.debug)(client, req)
 	if err != nil {
 		return nil, fmt.Errorf("fcgi request: %w", err)
 	}
@@ -126,28 +129,29 @@ func fpmRequest(rawUrl string, opts RequestOptions) (*http.Response, error) {
 	return rec.Result(), nil
 }
 
-func fpmHandler(docroot, index string) gofast.SessionHandler {
+func fpmHandler(docroot, index string, debug bool) gofast.SessionHandler {
 	return gofast.Chain(gofast.MapHeader, func(inner gofast.SessionHandler) gofast.SessionHandler {
 		return func(client gofast.Client, req *gofast.Request) (*gofast.ResponsePipe, error) {
+			if req.Raw.URL.Path == "" {
+				req.Raw.URL.Path = "/"
+			}
+
 			req.Params["QUERY_STRING"] = req.Raw.URL.RawQuery
 			req.Params["REQUEST_METHOD"] = req.Raw.Method
 			req.Params["CONTENT_TYPE"] = req.Raw.Header.Get("content-type")
 			req.Params["CONTENT_LENGTH"] = fmt.Sprintf("%d", req.Raw.ContentLength)
 
-			req.Params["SCRIPT_NAME"] = req.Raw.URL.Path
-			req.Params["SCRIPT_FILENAME"] = fmt.Sprintf("%s/%s", docroot, index) // custom for fpm
-			req.Params["REQUEST_URI"] = req.Raw.RequestURI
-			req.Params["DOCUMENT_URI"] = "$document_uri;"
+			req.Params["SCRIPT_FILENAME"] = fmt.Sprintf("%s/%s", docroot, index)
 			req.Params["DOCUMENT_ROOT"] = docroot
-			req.Params["SERVER_PROTOCOL"] = "http"
-			req.Params["REQUEST_SCHEME"] = req.Raw.URL.Scheme
-			req.Params["HTTPS"] = "$https if_not_empty;"
+			req.Params["DOCUMENT_URI"] = "/" + index
+			req.Params["REQUEST_URI"] = req.Raw.URL.Path
+			req.Params["SCRIPT_NAME"] = req.Raw.URL.Path
 
-			req.Params["GATEWAY_INTERFACE"] = "CGI/1.1;"
-			req.Params["SERVER_SOFTWARE"] = "fastcgi-probe"
-
-			// PHP only, required if PHP was built with --enable-force-cgi-redirect
-			req.Params["REDIRECT_STATUS"] = "200;"
+			if debug {
+				if b, err := json.MarshalIndent(req.Params, "", "  "); err == nil {
+					fmt.Println(string(b))
+				}
+			}
 
 			return inner(client, req)
 		}

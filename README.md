@@ -20,6 +20,7 @@ OPTIONS:
   -s, --silent                 don't show any output, unless failed
       --status-min int         fail if status is below (default 200)
       --status-max int         fail if status is above (default 299)
+      --debug                  dump the fcgi params
 ```
 
 The fcqi `REQUEST_URI` and `PATH_INFO` are derived from the request path.
@@ -43,6 +44,6 @@ curl -fsSL github.com/wolf-gmbh/fcgi-probe/releases/latest/download/fcgi-probe_L
 
 ### From Source
 
-```
+```bash
 go install github.com/wolf-gmbh/fcgi-probe@latest
 ```
