@@ -10,7 +10,7 @@ linter ?= go run github.com/golangci/golangci-lint/cmd/golangci-lint
 ##@ Commands
 
 help: ## Display this help text
-	@awk -f makehelp.awk $(MAKEFILE_LIST)
+	@./Makehelp Makefile
 
 
 ###@ Development
@@ -42,10 +42,6 @@ release-dryrun: tag ## same as release but local-only
 
 ###@ Pipeline
 
-pipeline-validation: ## validatate the project
-	$(MAKE) test
-	$(MAKE) vet
-	$(MAKE) build
+pipeline-validation: test vet build ## validatate the project
 
-pipeline-release: ## release the project
-	$(MAKE) release
+pipeline-release: release ## release the project

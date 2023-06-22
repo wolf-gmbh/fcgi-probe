@@ -1,4 +1,6 @@
-#!/usr/bin/env awk
+#!/usr/bin/env -S awk -f
+
+# Usage: Makehelp <MAKEFILE>
 
 # this script looks at the content of a given makefile
 # and generates a helptext based on its content.
@@ -25,7 +27,7 @@ BEGIN {
 
 # match sub-headings (###@ <heading>)
 /^###@/ {
-  printf "\n\033[0m%s:\033[0m\n", substr($0, 5)
+  printf "\n\033[0m%s:\033[0m\n", substr($0, 6)
 }
 
 # match targets that contain a (target: ## <description>)
