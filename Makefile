@@ -29,6 +29,7 @@ build: ## build the binaries for all targets
 ###@ Release
 
 tag: ## create a new git tag based on conventional commit messages
+	@git fetch --tags --force
 	@$(eval git_tag=v$(shell docker run -v "$(CURDIR):/tmp" --workdir /tmp \
 		--rm -u '$(shell id -u):$(shell id -g)' convco/convco version --bump))
 	@git tag -m "bump" -f "$(git_tag)"
