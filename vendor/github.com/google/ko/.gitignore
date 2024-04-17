@@ -1,6 +1,0 @@
-# Ignore GoLand (IntelliJ) files.
-.idea/
-
-ko
-
-.DS_Store
