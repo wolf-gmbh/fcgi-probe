@@ -38,8 +38,8 @@ fcgi-probe tcp4://localhost:9000/livez
 ## Binary Release
 
 ```bash
-curl -fsSL github.com/wolf-gmbh/fcgi-probe/releases/latest/download/fcgi-probe_Linux_x86_64.tar.gz \
-  | tar -C /usr/local/bin/ -xzf - fcgi-probe
+curl -fsSL github.com/wolf-gmbh/fcgi-probe/releases/latest/download/fcgi-probe
+chmod +x fcgi-probe
 ```
 
 ### From Source
